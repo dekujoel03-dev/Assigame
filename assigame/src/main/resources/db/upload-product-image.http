@@ -1,0 +1,38 @@
+# Exemples pour insérer une image produit via FormData
+# Backend : http://localhost:8080
+
+# 1) Créer un produit avec fichier image
+curl -X POST "http://localhost:8080/api/produit/add" ^
+  -F "nom_produit=Samsung Galaxy A15" ^
+  -F "statut=actif" ^
+  -F "description=Smartphone 128 Go" ^
+  -F "prix=115000" ^
+  -F "id_categorie=1" ^
+  -F "id_utilisateur=2" ^
+  -F "file=@C:\chemin\vers\photo.jpg"
+
+# 2) Créer un produit avec URL image (FormData)
+curl -X POST "http://localhost:8080/api/produit/add" ^
+  -F "nom_produit=Samsung Galaxy A15" ^
+  -F "statut=actif" ^
+  -F "prix=115000" ^
+  -F "id_categorie=1" ^
+  -F "id_utilisateur=2" ^
+  -F "image_url=https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800"
+
+# 3) Changer l'image d'un produit existant (fichier)
+curl -X POST "http://localhost:8080/api/produit/1/upload-image" ^
+  -F "file=@C:\chemin\vers\photo.jpg"
+
+# 4) Changer l'image d'un produit existant (URL via FormData)
+curl -X POST "http://localhost:8080/api/produit/1/upload-image" ^
+  -F "image_url=https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800"
+
+# 5) Mettre à jour un produit et remplacer son image
+curl -X PUT "http://localhost:8080/api/produit/update/1" ^
+  -F "nom_produit=Samsung Galaxy A15" ^
+  -F "statut=actif" ^
+  -F "file=@C:\chemin\vers\nouvelle-photo.jpg"
+
+# 6) Afficher l'image enregistrée en base
+# http://localhost:8080/api/produit/1/image

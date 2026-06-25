@@ -58,7 +58,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" className="glass" placeholder="vous@exemple.tg" {...register('email')} />
+            <Input id="email" type="email" className="glass" placeholder="vous@assigame.tg" {...register('email')} />
             {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
           </div>
           <div className="space-y-2">
@@ -78,11 +78,6 @@ export default function LoginPage() {
             S&apos;inscrire
           </Link>
         </p>
-        {import.meta.env.DEV && (
-          <p className="mt-4 rounded-xl bg-primary/5 p-3 text-center text-xs text-muted-foreground">
-            Démo : admin@assigame.tg / admin123 · kodjo@assigame.tg / seller123
-          </p>
-        )}
       </div>
     </div>
   )

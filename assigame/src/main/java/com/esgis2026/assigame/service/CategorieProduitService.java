@@ -1,7 +1,9 @@
 package com.esgis2026.assigame.service;
 
 import com.esgis2026.assigame.entity.CategorieProduit;
+import com.esgis2026.assigame.exception.ResourceNotFoundException;
 import com.esgis2026.assigame.repository.CategorieProduitRepository;
+import com.esgis2026.assigame.util.ImageValidator;
 import com.esgis2026.assigame.util.ProductImageLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,7 +25,7 @@ public class CategorieProduitService {
 
     public CategorieProduit getCategorieProduitById(Long id) {
         return categorieProduitRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("categorieProduit not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Catégorie introuvable"));
     }
 
     public CategorieProduit createCategorieProduit(CategorieProduit categorieProduit) {
@@ -59,8 +61,9 @@ public class CategorieProduitService {
 
     private void applyImage(CategorieProduit categorie, MultipartFile image) throws IOException {
         if (image != null && !image.isEmpty()) {
-            categorie.setImage(image.getBytes());
-            categorie.setImage_type(image.getContentType());
+            ImageValidator.ValidatedImage validated = ImageValidator.validate(image);
+            categorie.setImage(validated.bytes());
+            categorie.setImage_type(validated.contentType());
         }
     }
 }

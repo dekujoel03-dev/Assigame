@@ -77,8 +77,8 @@ public final class ProductImageLoader {
         }
 
         String scheme = uri.getScheme();
-        if (scheme == null || (!scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("http"))) {
-            throw new IOException("Seules les URLs HTTP(S) sont autorisées");
+        if (scheme == null || !scheme.equalsIgnoreCase("https")) {
+            throw new IOException("Seules les URLs HTTPS sont autorisées");
         }
 
         String host = uri.getHost();

@@ -3,9 +3,11 @@ package com.esgis2026.assigame.service;
 import com.esgis2026.assigame.entity.CategorieProduit;
 import com.esgis2026.assigame.entity.Produit;
 import com.esgis2026.assigame.entity.Utilisateur;
+import com.esgis2026.assigame.exception.ResourceNotFoundException;
 import com.esgis2026.assigame.repository.ProduitRepository;
 import com.esgis2026.assigame.security.JwtUserPrincipal;
 import com.esgis2026.assigame.security.SecurityUtils;
+import com.esgis2026.assigame.util.ImageValidator;
 import com.esgis2026.assigame.util.ProductImageLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,8 +62,7 @@ public class ProduitService {
                                    Long id, MultipartFile image, String imageUrl,
                                    JwtUserPrincipal principal) throws IOException {
 
-        Produit produit = produitRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new RuntimeException("Produit not found with id " + id));
+        Produit produit = findProductOrThrow(id);
         SecurityUtils.assertCanModifyProduct(produit, principal);
 
         if (nomProduit != null) produit.setNom_produit(nomProduit);
@@ -89,31 +90,32 @@ public class ProduitService {
     }
 
     public void deleteProduit(Long id, JwtUserPrincipal principal) {
-        Produit produit = produitRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new RuntimeException("Produit not found with id " + id));
+        Produit produit = findProductOrThrow(id);
         SecurityUtils.assertCanModifyProduct(produit, principal);
         produitRepository.deleteById(id);
     }
 
     public Produit getProduitById(Long id) {
-        return produitRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new RuntimeException("produit not found with id " + id));
+        return findProductOrThrow(id);
     }
 
     public Produit uploadImage(Long id, MultipartFile file, JwtUserPrincipal principal) throws IOException {
-        Produit produit = produitRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new RuntimeException("Produit not found with id " + id));
+        Produit produit = findProductOrThrow(id);
         SecurityUtils.assertCanModifyProduct(produit, principal);
         applyImage(produit, file);
         return reloadWithRelations(produitRepository.save(produit));
     }
 
     public Produit uploadImageFromUrl(Long id, String imageUrl, JwtUserPrincipal principal) throws IOException {
-        Produit produit = produitRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new RuntimeException("Produit not found with id " + id));
+        Produit produit = findProductOrThrow(id);
         SecurityUtils.assertCanModifyProduct(produit, principal);
         ProductImageLoader.applyFromUrl(produit, imageUrl);
         return reloadWithRelations(produitRepository.save(produit));
+    }
+
+    private Produit findProductOrThrow(Long id) {
+        return produitRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable"));
     }
 
     private Produit reloadWithRelations(Produit produit) {
@@ -123,8 +125,9 @@ public class ProduitService {
 
     private void applyImage(Produit produit, MultipartFile image) throws IOException {
         if (image != null && !image.isEmpty()) {
-            produit.setImage(image.getBytes());
-            produit.setImage_type(image.getContentType());
+            ImageValidator.ValidatedImage validated = ImageValidator.validate(image);
+            produit.setImage(validated.bytes());
+            produit.setImage_type(validated.contentType());
         }
     }
 

@@ -21,4 +21,10 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
 
     @Query("SELECT u FROM Utilisateur u LEFT JOIN FETCH u.type_utilisateur")
     List<Utilisateur> findAllWithType();
+
+    @Query("SELECT COUNT(u) > 0 FROM Utilisateur u WHERE u.mail_utilisateur = :email")
+    boolean existsByMail_utilisateur(@Param("email") String email);
+
+    @Query("SELECT COUNT(u) > 0 FROM Utilisateur u WHERE u.telephone_utilisateur = :telephone")
+    boolean existsByTelephone_utilisateur(@Param("telephone") String telephone);
 }

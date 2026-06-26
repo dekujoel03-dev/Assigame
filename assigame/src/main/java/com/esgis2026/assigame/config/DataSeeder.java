@@ -10,6 +10,7 @@ import com.esgis2026.assigame.repository.TypeUtilisateurRepository;
 import com.esgis2026.assigame.repository.UtilisateurRepository;
 import com.esgis2026.assigame.util.ProductImageLoader;
 import com.esgis2026.assigame.service.PasswordService;
+import com.esgis2026.assigame.security.UserRoleResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -104,7 +105,7 @@ public class DataSeeder implements CommandLineRunner {
             type.setLibelle_type_utilisateur(seed.libelle());
             type.setDescription_type_utilisateur(seed.description());
             TypeUtilisateur saved = typeUtilisateurRepository.save(type);
-            String key = seed.libelle().toLowerCase().contains("admin") ? "admin" : "seller";
+            String key = UserRoleResolver.isAdminType(saved) ? "admin" : "seller";
             types.put(key, saved);
         }
         return types;

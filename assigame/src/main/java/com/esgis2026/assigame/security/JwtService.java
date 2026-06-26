@@ -59,12 +59,6 @@ public class JwtService {
     }
 
     public static String resolveRole(Utilisateur utilisateur) {
-        String label = utilisateur.getType_utilisateur() != null
-                ? utilisateur.getType_utilisateur().getLibelle_type_utilisateur()
-                : "";
-        if (label != null && label.toLowerCase().contains("admin")) {
-            return "ADMIN";
-        }
-        return "SELLER";
+        return UserRoleResolver.resolveRole(utilisateur.getType_utilisateur());
     }
 }

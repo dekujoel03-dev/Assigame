@@ -1,6 +1,7 @@
 package com.esgis2026.assigame.controller;
 
 import com.esgis2026.assigame.entity.Produit;
+import com.esgis2026.assigame.exception.ResourceNotFoundException;
 import com.esgis2026.assigame.security.JwtUserPrincipal;
 import com.esgis2026.assigame.service.ProduitService;
 import com.esgis2026.assigame.util.ImageResponseFactory;
@@ -28,11 +29,12 @@ public class ProduitController {
     public List<Produit> getAllProduit() {
         return produitService.getAllProduits();
     }
+
     @GetMapping("/{id}")
     public Produit getProduitById(@PathVariable Long id) {
         return produitService.getProduitById(id);
     }
-    
+
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createProduit(
             @RequestParam("nom_produit") String nomProduit,
@@ -62,32 +64,30 @@ public class ProduitController {
         produitService.deleteProduit(id, principal);
     }
 
-@PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<?> updateProduit(
-        @PathVariable Long id,
-        @RequestParam(value = "nom_produit", required = false) String nomProduit,
-        @RequestParam(value = "statut", required = false) String statut,
-        @RequestParam(value = "description", required = false) String description,
-        @RequestParam(value = "prix", required = false) Double prix,
-        @RequestParam(value = "quantite_stock", required = false) Integer quantiteStock,
-        @RequestParam(value = "id_categorie", required = false) Long idCategorie,
-        @RequestParam(value = "id_utilisateur", required = false) Long idUtilisateur,
-        @RequestParam(value = "file", required = false) MultipartFile file,
-        @RequestParam(value = "image_url", required = false) String imageUrl,
-        @AuthenticationPrincipal JwtUserPrincipal principal
-) {
-    try {
-        Produit produit = produitService.updateProduit(
-                nomProduit, statut, description, prix, quantiteStock, idCategorie, idUtilisateur, id, file, imageUrl, principal);
-        return ResponseEntity.ok(produit);
-    } catch (IOException e) {
-        return ResponseEntity.badRequest().body(Map.of(
-                "message", "Image invalide ou inaccessible. Vérifiez le fichier ou l'URL."
-        ));
-    } catch (RuntimeException e) {
-        return ResponseEntity.notFound().build();
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProduit(
+            @PathVariable Long id,
+            @RequestParam(value = "nom_produit", required = false) String nomProduit,
+            @RequestParam(value = "statut", required = false) String statut,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "prix", required = false) Double prix,
+            @RequestParam(value = "quantite_stock", required = false) Integer quantiteStock,
+            @RequestParam(value = "id_categorie", required = false) Long idCategorie,
+            @RequestParam(value = "id_utilisateur", required = false) Long idUtilisateur,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "image_url", required = false) String imageUrl,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        try {
+            Produit produit = produitService.updateProduit(
+                    nomProduit, statut, description, prix, quantiteStock, idCategorie, idUtilisateur, id, file, imageUrl, principal);
+            return ResponseEntity.ok(produit);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Image invalide ou inaccessible. Vérifiez le fichier ou l'URL."
+            ));
+        }
     }
-}
 
     @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImage(
@@ -109,8 +109,6 @@ public ResponseEntity<?> updateProduit(
             return ResponseEntity.badRequest().body(Map.of(
                     "message", "Image invalide ou inaccessible. Vérifiez le fichier ou l'URL."
             ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
         }
     }
 
@@ -121,7 +119,7 @@ public ResponseEntity<?> updateProduit(
         try {
             Produit produit = produitService.getProduitById(id);
             return ImageResponseFactory.build(id, produit.getImage(), produit.getImage_type(), thumb);
-        } catch (RuntimeException e) {
+        } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();

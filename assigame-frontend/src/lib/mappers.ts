@@ -5,8 +5,8 @@ import { getCategoryImageMeta } from '@/lib/images'
 import { slugify } from '@/lib/utils'
 
 function mapUserRole(type?: { libelle_type_utilisateur?: string }): UserRole {
-  const label = type?.libelle_type_utilisateur?.toLowerCase() ?? ''
-  if (label.includes('admin')) return 'admin'
+  const label = type?.libelle_type_utilisateur?.trim().toLowerCase() ?? ''
+  if (label === 'administrateur') return 'admin'
   return 'seller'
 }
 

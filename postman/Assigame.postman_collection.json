@@ -2,22 +2,16 @@
   "info": {
     "_postman_id": "assigame-api-collection",
     "name": "Assigamé API",
-    "description": "Collection Postman pour tester l'API REST Assigamé (Spring Boot + JWT).\n\n## Démarrage rapide\n1. Importer l'environnement `Assigame-Local.postman_environment.json`\n2. Démarrer le backend : `mvnw spring-boot:run` (port 8080)\n3. Exécuter **Auth → Login Vendeur** ou **Login Admin**\n4. Le token JWT est enregistré automatiquement dans `{{token}}`\n5. Tester les autres requêtes",
+    "description": "Collection Postman pour tester l'API REST Assigamé (Spring Boot + JWT).\n\n## Démarrage rapide\n1. Importer `Assigame-Local.postman_environment.json`\n2. Démarrer le backend : `mvnw spring-boot:run` (port 8080)\n3. **02 — Public** → Liste catégories (définit `categoryId`)\n4. **01 — Auth** → Login Vendeur ou Login Admin\n5. **03 — Vendeur** → Mes produits (prépare `productId`) avant Modifier/Supprimer\n\nVariables auto : `token`, `productId`, `categoryId`, `sellerUserId`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token}}",
-        "type": "string"
-      }
-    ]
   },
   "item": [
     {
       "name": "01 — Auth",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+      },
       "item": [
         {
           "name": "Login Vendeur",
@@ -122,6 +116,29 @@
       "auth": { "type": "noauth" },
       "item": [
         {
+          "name": "Santé API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API en ligne (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('status UP', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
           "name": "Liste produits",
           "event": [
             {
@@ -136,6 +153,7 @@
                   "});",
                   "if (pm.response.json().length > 0) {",
                   "    pm.environment.set('productId', String(pm.response.json()[0].id_produit));",
+                  "    console.log('productId (public) =', pm.response.json()[0].id_produit, '— pour vendeur, utilisez 03 > Mes produits');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -176,10 +194,93 @@
         },
         {
           "name": "Liste catégories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Liste catégories (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const categories = pm.response.json();",
+                  "if (categories.length > 0) {",
+                  "    pm.environment.set('categoryId', String(categories[0].idcategorie_produit));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/categorieproduit/list"
           }
+        },
+        {
+          "name": "Détail catégorie par ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categorieproduit/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Image catégorie",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Image ou 404 si absente', function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categorieproduit/{{categoryId}}/image"
+          }
+        },
+        {
+          "name": "Inscription vendeur (public)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.remove('Authorization');",
+                  "pm.environment.set('registerEmail', 'test.postman.' + Date.now() + '@assigame.tg');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Inscription vendeur (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom_utilisateur\": \"Test\",\n  \"prenom_utilisateur\": \"Postman\",\n  \"sexe_utilisateur\": \"M\",\n  \"telephone_utilisateur\": \"+22890111222\",\n  \"mail_utilisateur\": \"{{registerEmail}}\",\n  \"password_utilisateur\": \"test12345\",\n  \"residence_utilisateur\": \"Lomé\"\n}"
+            },
+            "url": "{{baseUrl}}/users/add"
+          },
+          "description": "Inscription publique — le rôle vendeur est forcé côté serveur (pas de `type_utilisateur` dans le body)."
         },
         {
           "name": "Liste types utilisateur",
@@ -192,7 +293,47 @@
     },
     {
       "name": "03 — Vendeur (SELLER)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+      },
       "item": [
+        {
+          "name": "Mes produits (prépare productId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Liste produits (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const products = pm.response.json();",
+                  "const sellerId = Number(pm.environment.get('sellerUserId'));",
+                  "const mine = products.filter(function (p) {",
+                  "    return p.utilisateur && Number(p.utilisateur.id_utilisateur) === sellerId;",
+                  "});",
+                  "if (mine.length > 0) {",
+                  "    pm.environment.set('productId', String(mine[0].id_produit));",
+                  "    pm.test('productId défini pour le vendeur connecté', function () {",
+                  "        pm.expect(mine[0].id_produit).to.exist;",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Aucun produit vendeur — créez-en un avant Modifier/Supprimer', function () {",
+                  "        pm.expect.fail('Exécutez Créer produit (image URL) puis réessayez');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/produit/list"
+          },
+          "description": "À exécuter après **Login Vendeur**. Met à jour `{{productId}}` avec un produit appartenant au vendeur connecté."
+        },
         {
           "name": "Créer produit (image URL)",
           "event": [
@@ -224,7 +365,7 @@
                 { "key": "statut", "value": "actif", "type": "text" },
                 { "key": "description", "value": "Créé via Postman", "type": "text" },
                 { "key": "prix", "value": "35000", "type": "text" },
-                { "key": "id_categorie", "value": "1", "type": "text" },
+                { "key": "id_categorie", "value": "{{categoryId}}", "type": "text" },
                 { "key": "id_utilisateur", "value": "{{sellerUserId}}", "type": "text" },
                 {
                   "key": "image_url",
@@ -247,7 +388,7 @@
                 { "key": "statut", "value": "actif", "type": "text" },
                 { "key": "description", "value": "Upload fichier Postman", "type": "text" },
                 { "key": "prix", "value": "42000", "type": "text" },
-                { "key": "id_categorie", "value": "1", "type": "text" },
+                { "key": "id_categorie", "value": "{{categoryId}}", "type": "text" },
                 { "key": "id_utilisateur", "value": "{{sellerUserId}}", "type": "text" },
                 { "key": "file", "type": "file", "src": [] }
               ]
@@ -258,6 +399,23 @@
         },
         {
           "name": "Modifier produit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 404) {",
+                  "    console.log('404 : produit {{productId}} introuvable ou supprimé.');",
+                  "    console.log('→ Exécutez Login Vendeur, puis Mes produits (prépare productId).');",
+                  "}",
+                  "pm.test('Produit modifié (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "body": {
@@ -269,10 +427,24 @@
               ]
             },
             "url": "{{baseUrl}}/produit/update/{{productId}}"
-          }
+          },
+          "description": "Ordre : **Login Vendeur** → **Mes produits (prépare productId)** → cette requête.\n\n404 = `{{productId}}` n'existe pas dans votre base locale."
         },
         {
           "name": "Changer image (upload-image)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Image mise à jour (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "body": {
@@ -290,6 +462,19 @@
         },
         {
           "name": "Supprimer produit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Produit supprimé (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "DELETE",
             "url": "{{baseUrl}}/produit/delete/{{productId}}"
@@ -300,6 +485,10 @@
     },
     {
       "name": "04 — Admin",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+      },
       "item": [
         {
           "name": "Liste utilisateurs",
@@ -322,23 +511,25 @@
           }
         },
         {
-          "name": "Inscription vendeur (public)",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nom_utilisateur\": \"Test\",\n  \"prenom_utilisateur\": \"Postman\",\n  \"sexe_utilisateur\": \"M\",\n  \"telephone_utilisateur\": \"+22890111222\",\n  \"mail_utilisateur\": \"test.postman@assigame.tg\",\n  \"login_utilisateur\": \"testpostman\",\n  \"password_utilisateur\": \"test1234\",\n  \"residence_utilisateur\": \"Lomé\",\n  \"type_utilisateur\": {\n    \"id_type_utilisateur\": 2\n  }\n}"
-            },
-            "url": "{{baseUrl}}/users/add"
-          },
-          "description": "`id_type_utilisateur: 2` = Vendeur (après seed). Vérifiez avec GET /typeutilisateur/list si les IDs diffèrent."
-        },
-        {
           "name": "Ajouter catégorie",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Catégorie créée (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('categoryId', String(json.idcategorie_produit));",
+                  "    pm.environment.set('testCategoryId', String(json.idcategorie_produit));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -362,22 +553,53 @@
               "mode": "raw",
               "raw": "{\n  \"nom_categorieproduit\": \"Test Postman modifié\",\n  \"description\": \"Mise à jour\"\n}"
             },
-            "url": "{{baseUrl}}/categorieproduit/update/1"
+            "url": "{{baseUrl}}/categorieproduit/update/{{testCategoryId}}"
+          }
+        },
+        {
+          "name": "Image catégorie (upload)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image_url",
+                  "value": "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/categorieproduit/{{testCategoryId}}/upload-image"
           }
         },
         {
           "name": "Supprimer catégorie",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Catégorie supprimée (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/categorieproduit/delete/99"
+            "url": "{{baseUrl}}/categorieproduit/delete/{{testCategoryId}}"
           },
-          "description": "Remplacez `99` par l'ID d'une catégorie de test sans produits associés."
+          "description": "Exécutez **Ajouter catégorie** avant — supprime la catégorie de test (`testCategoryId`), pas une catégorie seed."
         }
       ],
       "description": "Exécutez d'abord **01 — Auth → Login Admin** pour obtenir un token ADMIN."
     },
     {
       "name": "05 — Erreurs (tests négatifs)",
+      "auth": { "type": "noauth" },
       "item": [
         {
           "name": "Login — mauvais mot de passe (401)",
@@ -435,7 +657,26 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "// Utilisez Login Vendeur avant cette requête"
+                  "const baseUrl = pm.environment.get('baseUrl');",
+                  "pm.sendRequest({",
+                  "    url: baseUrl + '/auth/login',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: {",
+                  "        mode: 'raw',",
+                  "        raw: JSON.stringify({",
+                  "            email: pm.environment.get('sellerEmail'),",
+                  "            password: pm.environment.get('sellerPassword')",
+                  "        })",
+                  "    }",
+                  "}, function (err, res) {",
+                  "    if (err || res.code !== 200) {",
+                  "        console.warn('Login vendeur prerequest échoué — vérifiez sellerEmail/sellerPassword');",
+                  "        return;",
+                  "    }",
+                  "    const token = res.json().token;",
+                  "    pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });",
+                  "});"
                 ],
                 "type": "text/javascript"
               }

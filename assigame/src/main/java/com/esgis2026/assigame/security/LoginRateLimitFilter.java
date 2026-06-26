@@ -20,13 +20,16 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     private final int maxAttempts;
     private final long windowMs;
+    private final boolean trustForwardedFor;
     private final Map<String, AttemptWindow> attempts = new ConcurrentHashMap<>();
 
     public LoginRateLimitFilter(
             @Value("${app.security.login-max-attempts:10}") int maxAttempts,
-            @Value("${app.security.login-window-ms:60000}") long windowMs) {
+            @Value("${app.security.login-window-ms:60000}") long windowMs,
+            @Value("${app.security.trust-forwarded-for:false}") boolean trustForwardedFor) {
         this.maxAttempts = maxAttempts;
         this.windowMs = windowMs;
+        this.trustForwardedFor = trustForwardedFor;
     }
 
     @Override
@@ -64,9 +67,11 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     }
 
     private String clientKey(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        if (trustForwardedFor) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
         }
         return request.getRemoteAddr();
     }

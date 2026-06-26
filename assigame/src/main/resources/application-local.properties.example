@@ -1,15 +1,15 @@
 # Configuration locale — NE PAS COMMITER
 #
 # 1. Copier ce fichier :
-#    cp application-local.properties.example application-local.properties
-#    (Windows PowerShell)
 #    Copy-Item application-local.properties.example application-local.properties
 #
 # 2. Renseigner vos valeurs ci-dessous.
 #    Le fichier application-local.properties est ignoré par Git.
 
+# Base locale (par défaut — ne changez pas sauf si votre Postgres est ailleurs)
+# spring.datasource.url=jdbc:postgresql://localhost:5432/dbassigame
+# spring.datasource.username=postgres
 spring.datasource.password=VOTRE_MOT_DE_PASSE_POSTGRES
 
 # Clé JWT de développement (Base64, min. 256 bits)
-# En production : définir JWT_SECRET via variable d'environnement uniquement.
 app.jwt.secret=YXNzaWdhbWUtc3VwZXItc2VjcmV0LWtleS1mb3Itand0LTMyYnl0ZXM=

@@ -176,7 +176,7 @@ npm run dev
 
 → Application sur **http://localhost:5173**
 
-### Build production (frontend)
+### Build frontend (local)
 
 ```bash
 cd assigame-frontend
@@ -761,7 +761,7 @@ Voir le guide complet : **[postman/README.md](./postman/README.md)**.
 - Pagination API côté serveur
 - Cache serveur des miniatures (mémoire ou disque)
 - Tests unitaires et d'intégration
-- CI/CD et déploiement Docker
+- CI/CD automatisé
 - PWA (installation mobile, mode hors-ligne partiel)
 
 ---
